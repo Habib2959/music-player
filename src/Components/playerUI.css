@@ -1,0 +1,45 @@
+.card{
+    width: 19rem;
+    padding: 20px;
+}
+
+.controls{
+    display: flex;
+    justify-content: space-between;
+}
+
+.fa{
+    font-size: 60px !important;
+    cursor: pointer;
+}
+
+.seek-main{
+    height: 5px;
+    background-color: rgb(206, 191, 191);
+    width: 100%;
+    margin: 5px 0;
+    position: relative;
+    cursor: pointer;
+    appearance: none;
+    -moz-appearance: none;
+-webkit-appearance: none;
+}
+
+.seek-innner{
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: black;
+    height: 100%;
+    transition: all .5s ease;
+    appearance: none;
+    -moz-appearance: none;
+-webkit-appearance: none;
+}
+.seek-main:hover .seek-innner{
+    z-index: -2;
+}
+.time-duration{
+    display: flex;
+    justify-content: space-between;
+}
