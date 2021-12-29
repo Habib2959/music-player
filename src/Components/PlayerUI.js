@@ -1,9 +1,9 @@
 import axios from 'axios';
 import React, { Component } from 'react';
 import AudioControls from './AudioControls';
-import { BaseUrl } from './BaseUrl';
-import './playerUI.css'
-import Seek from './Seek';
+import './playerUI.css';
+import SideBar from './SideBar';
+
 
 
 
@@ -16,10 +16,11 @@ class PlayerUI extends Component {
         durationSeconds: 0,
         currentSecond: 0,
         currentMinute: 0,
-        progressbar: 0
+        progressbar: 0,
+        sideBarClicked: false
     }
     componentDidMount() {
-        axios.get(BaseUrl + "songs")
+        axios.get("https://music-player-dev-990b7-default-rtdb.firebaseio.com/songs.json")
             .then(response => {
                 this.setState({
                     songsData: response.data
@@ -88,16 +89,12 @@ class PlayerUI extends Component {
         let durationReaminingSeconds = Math.floor(audio.duration % 60);
         this.setState({
             durationMinutes: durationInMinutes,
-            durationSeconds: durationReaminingSeconds
+            durationSeconds: durationReaminingSeconds,
+            isPlaying: (this.state.sideBarClicked? true : false)
         })
+
     }
 
-    seekUpdate = event => {
-        let audio = document.querySelector('#audio');
-        let progressPercentage = (event.nativeEvent.offsetX / event.nativeEvent.srcElement.clientWidth);
-        let UpdatedDuration = (audio.duration) * progressPercentage;
-        audio.currentTime = UpdatedDuration;
-    }
     autoplay = () => {
         let audio = document.querySelector('#audio');
         let playPromise = audio.play();
@@ -114,6 +111,22 @@ class PlayerUI extends Component {
         }
 
     }
+    handleSeek = (e) => {
+        let audio = document.querySelector('#audio');
+        let progressPercentage = Number(e.target.value)/100;
+        let UpdatedDuration = (audio.duration) * progressPercentage;
+        audio.currentTime = UpdatedDuration;
+    }
+
+    SideBarSongUpdate = clickedSongIndex => {
+        this.setState({
+            currentSongIndex : clickedSongIndex,
+            currentSecond:0,
+            currentMinute:0,
+            sideBarClicked: true
+        })
+        
+    }
 
     componentDidUpdate() {
         if (this.state.isPlaying) {
@@ -124,21 +137,28 @@ class PlayerUI extends Component {
     }
 
     render() {
-
-        const { currentSongIndex, isPlaying, durationMinutes, durationSeconds, currentSecond, currentMinute, progressbar } = this.state;
+        const { currentSongIndex, isPlaying, durationMinutes, durationSeconds, currentSecond, currentMinute, progressbar, songsData } = this.state;
+        document.title = songsData.length < 1 ? "Music player" : `Now playing || ${songsData[currentSongIndex].title}`;
         let audio = null;
         let title = '';
         let author = '';
-        if (this.state.songsData.length !== 0) {
-            audio = <audio id="audio" src={BaseUrl + this.state.songsData[currentSongIndex].song} onTimeUpdate={(event) => this.timeUpdate(event)} onLoadedData={this.duration} onEnded={this.autoplay} />
-            title = this.state.songsData[currentSongIndex].title;
-            author = this.state.songsData[currentSongIndex].author;
+        if (songsData.length !== 0) {
+            audio = <audio id="audio" src={songsData[currentSongIndex].song} onTimeUpdate={(event) => this.timeUpdate(event)} onLoadedData={this.duration} onEnded={this.autoplay} />
+            title = songsData[currentSongIndex].title;
+            author = songsData[currentSongIndex].author;
         }
         return (
             <div>
-                <div className="container">
-                    <div className="row">
-                        <div className="col-12">
+                <div className="container-fluid">
+                    <div className="row flex-md-row flex-column-reverse">
+                        <div className="col-md-6">
+                            <SideBar songsData ={songsData} 
+                            currentSongIndex={currentSongIndex}
+                            isPlaying={isPlaying} 
+                            togglePlayAndPause={this.togglePlayAndPause}
+                            SideBarSongUpdate={this.SideBarSongUpdate}/>
+                        </div>
+                        <div className="col-md-6 d-flex justify-content-center align-items-center">
                             <div className="card">
                                 <div className="titles">
                                     <h2>{title}</h2>
@@ -148,11 +168,10 @@ class PlayerUI extends Component {
                                     <span>{currentMinute < 10 ? `0${currentMinute}` : currentMinute}:{currentSecond < 10 ? `0${currentSecond}` : currentSecond}</span>
                                     <span>{durationMinutes < 10 ? `0${durationMinutes}` : durationMinutes}:{durationSeconds < 10 ? `0${durationSeconds}` : durationSeconds}</span>
                                 </div>
-                                <div className="audio">
+                                <div className="audio" >
                                     {audio}
                                 </div>
-                                <Seek seekUpdate={this.seekUpdate}
-                                    progressWidth={progressbar} />
+                                <input type="range" value={Number.isNaN(progressbar)? "0": String(progressbar) } min="0" max="100" onInput={this.handleSeek} className="slider"/>
                                 <AudioControls isPlaying={isPlaying}
                                     togglePlayAndPause={this.togglePlayAndPause}
                                     nextSong={this.nextSong}
